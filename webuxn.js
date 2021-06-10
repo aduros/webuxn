@@ -54,6 +54,11 @@ export async function run (wasmBuffer, romBuffer, bgCanvas) {
     }
 
     function onPointerEvent (event) {
+        // Go fullscreen on mobile
+        if (event.pointerType == "touch" && document.fullscreenElement == null) {
+            bgCanvas.requestFullscreen({navigationUI: "hide"});
+        }
+
         const bounds = bgCanvas.getBoundingClientRect();
         const x = (event.clientX - bounds.left) * (bgCanvas.width / bounds.width);
         const y = (event.clientY - bounds.top) * (bgCanvas.height / bounds.height);

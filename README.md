@@ -4,7 +4,7 @@ A light-weight port of the [uxn virtual machine](https://100r.co/site/uxn.html) 
 
 ## Demos
 
-- [life.rom](https://aduros.com/webuxn/?rom=roms/bifurcan.rom)
+- [life.rom](https://aduros.com/webuxn/?rom=roms/life.rom)
 - [darena.rom](https://aduros.com/webuxn/?rom=roms/darena.rom)
 - [animation.rom](https://aduros.com/webuxn/?rom=roms/animation.rom)
 - [Bring Your Own Rom](https://aduros.com/webuxn/)

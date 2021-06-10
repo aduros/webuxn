@@ -73,14 +73,16 @@
       });
     }
 
-    // Load all assets in parallel
-    const [webuxn, wasmBuffer, romBuffer] = await Promise.all([
-      import("./webuxn.js"),
-      fetchArrayBuffer("build/webuxn.wasm"),
-      findRomBuffer(),
-    ]);
+    (async function () {
+      // Load all assets in parallel
+      const [webuxn, wasmBuffer, romBuffer] = await Promise.all([
+        import("./webuxn.js"),
+        fetchArrayBuffer("build/webuxn.wasm"),
+        findRomBuffer(),
+      ]);
 
-    webuxn.run(wasmBuffer, romBuffer, screenCanvas);
+      webuxn.run(wasmBuffer, romBuffer, screenCanvas);
+    })();
   </script>
 </body>
 </html>

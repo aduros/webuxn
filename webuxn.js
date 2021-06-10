@@ -53,16 +53,16 @@ export async function run (wasmBuffer, romBuffer, bgCanvas) {
         bgCtx.drawImage(fgCanvas, 0, 0);
     }
 
-    function onMouseEvent (event) {
+    function onPointerEvent (event) {
         const bounds = bgCanvas.getBoundingClientRect();
         const x = (event.clientX - bounds.left) * (bgCanvas.width / bounds.width);
         const y = (event.clientY - bounds.top) * (bgCanvas.height / bounds.height);
-        wasm.exports.onMouseEvent(x, y, event.buttons);
+        wasm.exports.onPointerEvent(x, y, event.buttons);
         event.preventDefault();
     }
-    bgCanvas.addEventListener("mousemove", onMouseEvent);
-    bgCanvas.addEventListener("mousedown", onMouseEvent);
-    bgCanvas.addEventListener("mouseup", onMouseEvent);
+    bgCanvas.addEventListener("pointermove", onPointerEvent);
+    bgCanvas.addEventListener("pointerdown", onPointerEvent);
+    bgCanvas.addEventListener("pointerup", onPointerEvent);
 
     bgCanvas.addEventListener("wheel", event => {
         wasm.exports.onWheelEvent(event.deltaY);

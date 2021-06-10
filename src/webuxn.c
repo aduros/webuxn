@@ -179,7 +179,7 @@ void EMSCRIPTEN_KEEPALIVE onUpdate () {
     }
 }
 
-void EMSCRIPTEN_KEEPALIVE onMouseEvent (int x, int y, int buttons) {
+void EMSCRIPTEN_KEEPALIVE onPointerEvent (int x, int y, int buttons) {
     // FIXME(2021-06-10): Click and drag compatibility with uxnemu
     mempoke16(devmouse->dat, 0x2, x);
     mempoke16(devmouse->dat, 0x4, y);

@@ -52,6 +52,7 @@ console.log(`<!doctype html>
 <html>
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no">
   <title>${path.basename(process.argv[2])}</title>
   <style>
     html, body {
@@ -68,6 +69,7 @@ console.log(`<!doctype html>
       image-rendering: pixelated;
       image-rendering: crisp-edges;
       cursor: none;
+      touch-action: none;
       flex: 1;
       max-width: 768px;
       max-height: 512px;

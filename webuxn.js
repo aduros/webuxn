@@ -39,10 +39,10 @@ export async function run (wasmBuffer, romBuffer, bgCanvas) {
         }
     }
 
-    function render (bg, fg) {
+    function render (bgPtr, fgPtr) {
         const size = bgCanvas.width*bgCanvas.height*4;
-        const bgPixels = new Uint8Array(wasm.exports.memory.buffer, bg, size);
-        const fgPixels = new Uint8Array(wasm.exports.memory.buffer, fg, size);
+        const bgPixels = new Uint8Array(wasm.exports.memory.buffer, bgPtr, size);
+        const fgPixels = new Uint8Array(wasm.exports.memory.buffer, fgPtr, size);
 
         bgImageData.data.set(bgPixels);
         bgCtx.putImageData(bgImageData, 0, 0);
@@ -71,9 +71,16 @@ export async function run (wasmBuffer, romBuffer, bgCanvas) {
     }
 
     function onPointerEvent (event) {
-        // Go fullscreen on mobile
-        if (event.type == "pointerdown" && event.pointerType == "touch" && document.fullscreenElement == null) {
-            bgCanvas.requestFullscreen({navigationUI: "hide"});
+        // Do certain things that require a user gesture
+        if (event.type == "pointerdown") {
+            if (document.fullscreenElement == null && event.pointerType == "touch") {
+                // Go fullscreen on mobile
+                bgCanvas.requestFullscreen({navigationUI: "hide"});
+            }
+            if (audioCtx.state == "suspended") {
+                // Try to resume audio
+                audioCtx.resume();
+            }
         }
 
         // FIXME(2021-06-10): mouse coords incorrect when in fullscreen
@@ -152,6 +159,21 @@ export async function run (wasmBuffer, romBuffer, bgCanvas) {
     if (lineBuffer) {
         printChar(10);
     }
+
+    // Audio handling
+    const audioCtx = new AudioContext();
+    const chunkSize = 1024;
+    const processor = audioCtx.createScriptProcessor(chunkSize, 0, 2);
+    processor.onaudioprocess = event => {
+        const audioBuffer = event.outputBuffer;
+
+        const samplesPtr = wasm.exports.getAudioSamples();
+        const samples = new Float32Array(wasm.exports.memory.buffer, samplesPtr, 2*chunkSize);
+
+        audioBuffer.copyToChannel(samples, 0);
+        audioBuffer.copyToChannel(samples.subarray(chunkSize), 1);
+    };
+    processor.connect(audioCtx.destination);
 
     // Update every frame
     function update () {

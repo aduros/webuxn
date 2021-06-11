@@ -80,15 +80,12 @@ void audio_talk(Device *d, Uint8 b0, Uint8 w)
         else if(b0 == 0x4)
             d->dat[0x4] = apu_get_vu(c);
     } else if(b0 == 0xf) {
-        // TODO(2021-06-09): Implement audio
-        /* SDL_LockAudioDevice(audio_id); */
         c->len = mempeek16(d->dat, 0xa);
         c->addr = &d->mem[mempeek16(d->dat, 0xc)];
         c->volume[0] = d->dat[0xe] >> 4;
         c->volume[1] = d->dat[0xe] & 0xf;
         c->repeat = !(d->dat[0xf] & 0x80);
         apu_start(c, mempeek16(d->dat, 0x8), d->dat[0xf] & 0x7f);
-        /* SDL_UnlockAudioDevice(audio_id); */
     }
 }
 
@@ -110,6 +107,25 @@ nil_talk(Device *d, Uint8 b0, Uint8 w)
 
 Uint8* EMSCRIPTEN_KEEPALIVE getRomPtr () {
     return u.ram.dat + PAGE_PROGRAM;
+}
+
+float* EMSCRIPTEN_KEEPALIVE getAudioSamples () {
+    // Should match chunkSize in webuxn.js, it would be nice to lower this to 512, but that seems to
+    // introduce skipping
+    const int chunkSize = 1024;
+
+    Sint16 samples[2*chunkSize] = {0};
+    for (int ii = 0; ii < POLYPHONY; ++ii) {
+        apu_render(&apu[ii], samples, samples + 2*chunkSize);
+    }
+
+    // Convert interleaved Sint16 array to uninterleaved float32 array
+    static float webAudioSamples[2*chunkSize];
+    for (int ii = 0; ii < chunkSize; ++ii) {
+        webAudioSamples[ii] = (float)samples[2*ii] / 32767;
+        webAudioSamples[ii+chunkSize] = (float)samples[2*ii+1] / 32767;
+    }
+    return webAudioSamples;
 }
 
 void EMSCRIPTEN_KEEPALIVE init () {

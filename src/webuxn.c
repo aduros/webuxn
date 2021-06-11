@@ -7,6 +7,7 @@
 extern void printChar (const char c);
 extern void printStr (const char* str);
 extern void render (const Uint32* bg, const Uint32* fg);
+extern void getDateTime (const Uint8* ptr);
 
 const Uint16 WIDTH = 384;
 const Uint16 HEIGHT = 256;
@@ -94,21 +95,9 @@ void audio_talk(Device *d, Uint8 b0, Uint8 w)
 void
 datetime_talk(Device *d, Uint8 b0, Uint8 w)
 {
-    // TODO(2021-06-10): Implement datetime
-    /* time_t seconds = time(NULL); */
-    /* struct tm *t = localtime(&seconds); */
-    /* t->tm_year += 1900; */
-    /* mempoke16(d->dat, 0x0, t->tm_year); */
-    /* d->dat[0x2] = t->tm_mon; */
-    /* d->dat[0x3] = t->tm_mday; */
-    /* d->dat[0x4] = t->tm_hour; */
-    /* d->dat[0x5] = t->tm_min; */
-    /* d->dat[0x6] = t->tm_sec; */
-    /* d->dat[0x7] = t->tm_wday; */
-    /* mempoke16(d->dat, 0x08, t->tm_yday); */
-    /* d->dat[0xa] = t->tm_isdst; */
-    /* (void)b0; */
-    /* (void)w; */
+    getDateTime(d->dat);
+    (void)b0;
+    (void)w;
 }
 
 void

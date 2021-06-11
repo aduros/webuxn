@@ -19,6 +19,7 @@ export async function run (wasmBuffer, romBuffer, bgCanvas) {
             printChar,
             printStr,
             render,
+            getDateTime,
         },
     });
 
@@ -53,15 +54,32 @@ export async function run (wasmBuffer, romBuffer, bgCanvas) {
         bgCtx.drawImage(fgCanvas, 0, 0);
     }
 
+    function getDateTime (datPtr) {
+        const dat = new DataView(wasm.exports.memory.buffer, datPtr, 16);
+        const now = new Date();
+        dat.setUint16(0x0, now.getFullYear());
+        dat.setUint8(0x2, now.getMonth());
+        dat.setUint8(0x3, now.getDay());
+        dat.setUint8(0x4, now.getHours());
+        dat.setUint8(0x5, now.getMinutes());
+        dat.setUint8(0x6, now.getSeconds());
+        dat.setUint8(0x7, now.getDay());
+
+        // TODO(2021-06-11): Implement day-of-year and DST flag
+        dat.setUint16(0x08, 0);
+        dat.setUint8(0xa, 0);
+    }
+
     function onPointerEvent (event) {
         // Go fullscreen on mobile
-        if (event.pointerType == "touch" && document.fullscreenElement == null) {
+        if (event.type == "pointerdown" && event.pointerType == "touch" && document.fullscreenElement == null) {
             bgCanvas.requestFullscreen({navigationUI: "hide"});
         }
 
+        // FIXME(2021-06-10): mouse coords incorrect when in fullscreen
         const bounds = bgCanvas.getBoundingClientRect();
-        const x = (event.clientX - bounds.left) * (bgCanvas.width / bounds.width);
-        const y = (event.clientY - bounds.top) * (bgCanvas.height / bounds.height);
+        const x = bgCanvas.width * (event.clientX - bounds.left) / bounds.width;
+        const y = bgCanvas.height * (event.clientY - bounds.top) / bounds.height;
         wasm.exports.onPointerEvent(x, y, event.buttons);
         event.preventDefault();
     }

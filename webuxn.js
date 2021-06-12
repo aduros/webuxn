@@ -150,6 +150,56 @@ export async function run (wasmBuffer, romBuffer, bgCanvas) {
     window.addEventListener("keydown", onKeyboardEvent);
     window.addEventListener("keyup", onKeyboardEvent);
 
+    // Gamepad handling
+    let gamepadIdx = -1;
+    window.addEventListener("gamepadconnected", event => {
+        const gamepad = event.gamepad;
+        if (gamepad.mapping == "standard") {
+            gamepadIdx = gamepad.index;
+        }
+    });
+    window.addEventListener("gamepaddisconnected", event => {
+        gamepadIdx = -1;
+    });
+    function updateGamepad () {
+        if (gamepadIdx >= 0) {
+            const gamepad = navigator.getGamepads()[gamepadIdx];
+            const buttons = gamepad.buttons;
+
+            // https://w3c.github.io/gamepad/#remapping
+            let gamepadKeys = 0;
+            if (buttons[0].pressed) {
+                gamepadKeys |= 0x01; // Control
+            }
+            if (buttons[1].pressed) {
+                gamepadKeys |= 0x02; // Alt
+            }
+            if (buttons[2].pressed) {
+                gamepadKeys |= 0x04; // Shift
+            }
+            if (buttons[8].pressed || buttons[9].pressed) {
+                gamepadKeys |= 0x08; // Escape
+            }
+            if (buttons[12].pressed) {
+                gamepadKeys |= 0x10; // Up
+            }
+            if (buttons[13].pressed) {
+                gamepadKeys |= 0x20; // Down
+            }
+            if (buttons[14].pressed) {
+                gamepadKeys |= 0x40; // Left
+            }
+            if (buttons[15].pressed) {
+                gamepadKeys |= 0x80; // Right
+            }
+
+            if (keys != gamepadKeys) {
+                keys = gamepadKeys;
+                wasm.exports.onKeyboardEvent(keys, 0);
+            }
+        }
+    }
+
     // Load the ROM
     const memory = new Uint8Array(wasm.exports.memory.buffer);
     memory.set(new Uint8Array(romBuffer), wasm.exports.getRomPtr());
@@ -177,6 +227,7 @@ export async function run (wasmBuffer, romBuffer, bgCanvas) {
 
     // Update every frame
     function update () {
+        updateGamepad();
         wasm.exports.onUpdate();
         requestAnimationFrame(update);
     }

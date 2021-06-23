@@ -105,7 +105,14 @@ export async function run (wasmBuffer, romBuffer, bgCanvas) {
     });
 
     function onKeyboardEvent (event) {
-        // event.preventDefault();
+        event.preventDefault();
+
+        // Handle special emulator keys
+        switch (event.keyCode) {
+        case 116: // F5
+            boot();
+            return;
+        }
 
         let mask = 0;
         switch (event.keyCode) {
@@ -200,16 +207,22 @@ export async function run (wasmBuffer, romBuffer, bgCanvas) {
         }
     }
 
-    // Load the ROM
-    const memory = new Uint8Array(wasm.exports.memory.buffer);
-    const romBufferLength = Math.min(romBuffer.byteLength, 0x10000 - 0x0100);
-    memory.set(new Uint8Array(romBuffer, 0, romBufferLength), wasm.exports.getRomPtr());
+    function boot () {
+        // Initialize
+        wasm.exports.init();
 
-    // Initialize
-    wasm.exports.init();
-    if (lineBuffer) {
-        printChar(10);
+        // Load the ROM
+        const memory = new Uint8Array(wasm.exports.memory.buffer);
+        const romBufferLength = Math.min(romBuffer.byteLength, 0x10000 - 0x0100);
+        memory.set(new Uint8Array(romBuffer, 0, romBufferLength), wasm.exports.getRomPtr());
+
+        // Execute it
+        wasm.exports.runMain();
+        if (lineBuffer) {
+            printChar(10);
+        }
     }
+    boot();
 
     // Audio handling
     const audioCtx = new AudioContext();

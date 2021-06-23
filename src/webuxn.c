@@ -1,4 +1,5 @@
 #include <emscripten.h>
+#include <string.h>
 
 #include "uxn.h"
 #include "devices/ppu.h"
@@ -129,8 +130,9 @@ float* EMSCRIPTEN_KEEPALIVE getAudioSamples () {
 }
 
 void EMSCRIPTEN_KEEPALIVE init () {
-    /* printStr("Called init\n"); */
-    /* bootuxn(&u); */
+    // Reset state
+    memset(&u, 0, sizeof(u));
+    memset(apu, 0, sizeof(apu));
 
     // Statically allocate pixels to avoid depending on malloc
     static Uint32 bgPixels[WIDTH*HEIGHT];
@@ -157,10 +159,12 @@ void EMSCRIPTEN_KEEPALIVE init () {
     portuxn(&u, 0xe, "---", nil_talk);
     portuxn(&u, 0xf, "---", nil_talk);
 
-    /* Write screen size to dev/screen */
+    // Write screen size to dev/screen
     mempoke16(devscreen->dat, 2, WIDTH);
     mempoke16(devscreen->dat, 4, HEIGHT);
+}
 
+void EMSCRIPTEN_KEEPALIVE runMain () {
     evaluxn(&u, PAGE_PROGRAM);
 }
 

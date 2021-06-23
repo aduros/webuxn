@@ -10,6 +10,13 @@ A light-weight port of the [uxn virtual machine](https://100r.co/site/uxn.html) 
 - [musictracker.rom](https://aduros.com/webuxn/?rom=roms/musictracker.rom)
 - [Bring Your Own Rom](https://aduros.com/webuxn/)
 
+## Hotkeys
+
+- F2: Save state
+- F4: Load state
+- F5: Reboot
+- F10: Toggle fullscreen
+
 ## rom2html
 
 `rom2html` bakes a rom and VM into a fully self-contained html that can be easily distributed.
@@ -18,7 +25,3 @@ A light-weight port of the [uxn virtual machine](https://100r.co/site/uxn.html) 
 make
 ./rom2html roms/life.rom > life.html
 ```
-
-## TODO
-
-- Files (using IndexedDB?)

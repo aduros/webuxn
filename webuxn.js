@@ -122,6 +122,13 @@ export async function run (wasmBuffer, romBuffer, bgCanvas) {
             case 116: // F5
                 boot();
                 return;
+            case 121: // F10
+                if (document.fullscreenElement == null) {
+                    bgCanvas.requestFullscreen({navigationUI: "hide"});
+                } else {
+                    document.exitFullscreen();
+                }
+                return;
             }
         }
 

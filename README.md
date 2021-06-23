@@ -15,6 +15,7 @@ A light-weight port of the [uxn virtual machine](https://100r.co/site/uxn.html) 
 - F2: Save state
 - F4: Load state
 - F5: Reboot
+- F9: Take screenshot
 - F10: Toggle fullscreen
 
 ## rom2html

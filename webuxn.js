@@ -122,6 +122,16 @@ export async function run (wasmBuffer, romBuffer, bgCanvas) {
             case 116: // F5
                 boot();
                 return;
+            case 120: // F9
+                bgCanvas.toBlob(blob => {
+                    var url = URL.createObjectURL(blob);
+                    var anchor = document.createElement("a");
+                    anchor.href = url;
+                    anchor.download = "webuxn.png";
+                    anchor.click();
+                    URL.revokeObjectURL(url);
+                });
+                return;
             case 121: // F10
                 if (document.fullscreenElement == null) {
                     bgCanvas.requestFullscreen({navigationUI: "hide"});

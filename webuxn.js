@@ -202,7 +202,8 @@ export async function run (wasmBuffer, romBuffer, bgCanvas) {
 
     // Load the ROM
     const memory = new Uint8Array(wasm.exports.memory.buffer);
-    memory.set(new Uint8Array(romBuffer), wasm.exports.getRomPtr());
+    const romBufferLength = Math.min(romBuffer.byteLength, 0x10000 - 0x0100);
+    memory.set(new Uint8Array(romBuffer, 0, romBufferLength), wasm.exports.getRomPtr());
 
     // Initialize
     wasm.exports.init();
@@ -215,11 +216,9 @@ export async function run (wasmBuffer, romBuffer, bgCanvas) {
     const chunkSize = 1024;
     const processor = audioCtx.createScriptProcessor(chunkSize, 0, 2);
     processor.onaudioprocess = event => {
-        const audioBuffer = event.outputBuffer;
-
         const samplesPtr = wasm.exports.getAudioSamples();
         const samples = new Float32Array(wasm.exports.memory.buffer, samplesPtr, 2*chunkSize);
-
+        const audioBuffer = event.outputBuffer;
         audioBuffer.copyToChannel(samples, 0);
         audioBuffer.copyToChannel(samples.subarray(chunkSize), 1);
     };

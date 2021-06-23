@@ -10,12 +10,13 @@ extern void printStr (const char* str);
 extern void render (const Uint32* bg, const Uint32* fg);
 extern void getDateTime (const Uint8* ptr);
 
-const Uint16 WIDTH = 384;
-const Uint16 HEIGHT = 256;
+typedef struct {
+    Uxn uxn;
+    Ppu ppu;
+    Apu apu[POLYPHONY];
+} VMState;
 
-Uxn u;
-Ppu ppu;
-Apu apu[POLYPHONY];
+VMState vm;
 Device *devscreen, *devmouse, *devctrl, *devmidi, *devaudio0;
 Uint8 reqdraw = 0;
 
@@ -34,7 +35,7 @@ void system_talk (Device* d, Uint8 b0, Uint8 w) {
         d->dat[0x2] = d->u->wst.ptr;
         d->dat[0x3] = d->u->rst.ptr;
     } else {
-        putcolors(&ppu, &d->dat[0x8]);
+        putcolors(&vm.ppu, &d->dat[0x8]);
         reqdraw = 1;
     }
     (void)b0;
@@ -60,21 +61,21 @@ screen_talk(Device *d, Uint8 b0, Uint8 w)
         Uint16 x = mempeek16(d->dat, 0x8);
         Uint16 y = mempeek16(d->dat, 0xa);
         Uint8 *addr = &d->mem[mempeek16(d->dat, 0xc)];
-        Layer *layer = d->dat[0xe] >> 4 & 0x1 ? &ppu.fg : &ppu.bg;
+        Layer *layer = d->dat[0xe] >> 4 & 0x1 ? &vm.ppu.fg : &vm.ppu.bg;
         Uint8 mode = d->dat[0xe] >> 5;
         if(!mode)
-            putpixel(&ppu, layer, x, y, d->dat[0xe] & 0x3);
+            putpixel(&vm.ppu, layer, x, y, d->dat[0xe] & 0x3);
         else if(mode-- & 0x1)
-            puticn(&ppu, layer, x, y, addr, d->dat[0xe] & 0xf, mode & 0x2, mode & 0x4);
+            puticn(&vm.ppu, layer, x, y, addr, d->dat[0xe] & 0xf, mode & 0x2, mode & 0x4);
         else
-            putchr(&ppu, layer, x, y, addr, d->dat[0xe] & 0xf, mode & 0x2, mode & 0x4);
+            putchr(&vm.ppu, layer, x, y, addr, d->dat[0xe] & 0xf, mode & 0x2, mode & 0x4);
         reqdraw = 1;
     }
 }
 
 void audio_talk(Device *d, Uint8 b0, Uint8 w)
 {
-    Apu *c = &apu[d - devaudio0];
+    Apu *c = &vm.apu[d - devaudio0];
     if(!w) {
         if(b0 == 0x2)
             mempoke16(d->dat, 0x2, c->i);
@@ -107,7 +108,15 @@ nil_talk(Device *d, Uint8 b0, Uint8 w)
 }
 
 Uint8* EMSCRIPTEN_KEEPALIVE getRomPtr () {
-    return u.ram.dat + PAGE_PROGRAM;
+    return vm.uxn.ram.dat + PAGE_PROGRAM;
+}
+
+void* EMSCRIPTEN_KEEPALIVE getStatePtr () {
+    return &vm;
+}
+
+int EMSCRIPTEN_KEEPALIVE getStateSize () {
+    return sizeof(vm);
 }
 
 float* EMSCRIPTEN_KEEPALIVE getAudioSamples () {
@@ -117,7 +126,7 @@ float* EMSCRIPTEN_KEEPALIVE getAudioSamples () {
 
     Sint16 samples[2*chunkSize] = {0};
     for (int ii = 0; ii < POLYPHONY; ++ii) {
-        apu_render(&apu[ii], samples, samples + 2*chunkSize);
+        apu_render(&vm.apu[ii], samples, samples + 2*chunkSize);
     }
 
     // Convert interleaved Sint16 array to uninterleaved float32 array
@@ -131,33 +140,28 @@ float* EMSCRIPTEN_KEEPALIVE getAudioSamples () {
 
 void EMSCRIPTEN_KEEPALIVE init () {
     // Reset state
-    memset(&u, 0, sizeof(u));
-    memset(apu, 0, sizeof(apu));
+    memset(&vm, 0, sizeof(vm));
 
     // Statically allocate pixels to avoid depending on malloc
-    static Uint32 bgPixels[WIDTH*HEIGHT];
-    static Uint32 fgPixels[WIDTH*HEIGHT];
-    ppu.width = WIDTH;
-    ppu.height = HEIGHT;
-    ppu.bg.pixels = bgPixels;
-    ppu.fg.pixels = fgPixels;
+    vm.ppu.width = WIDTH;
+    vm.ppu.height = HEIGHT;
 
-    portuxn(&u, 0x0, "system", system_talk);
-    portuxn(&u, 0x1, "console", console_talk);
-    devscreen = portuxn(&u, 0x2, "screen", screen_talk);
-    devaudio0 = portuxn(&u, 0x3, "audio0", audio_talk);
-    portuxn(&u, 0x4, "audio1", audio_talk);
-    portuxn(&u, 0x5, "audio2", audio_talk);
-    portuxn(&u, 0x6, "audio3", audio_talk);
-    devmidi = portuxn(&u, 0x7, "midi", nil_talk);
-    devctrl = portuxn(&u, 0x8, "controller", nil_talk);
-    devmouse = portuxn(&u, 0x9, "mouse", nil_talk);
-    portuxn(&u, 0xa, "file", nil_talk);
-    portuxn(&u, 0xb, "datetime", datetime_talk);
-    portuxn(&u, 0xc, "---", nil_talk);
-    portuxn(&u, 0xd, "---", nil_talk);
-    portuxn(&u, 0xe, "---", nil_talk);
-    portuxn(&u, 0xf, "---", nil_talk);
+    portuxn(&vm.uxn, 0x0, "system", system_talk);
+    portuxn(&vm.uxn, 0x1, "console", console_talk);
+    devscreen = portuxn(&vm.uxn, 0x2, "screen", screen_talk);
+    devaudio0 = portuxn(&vm.uxn, 0x3, "audio0", audio_talk);
+    portuxn(&vm.uxn, 0x4, "audio1", audio_talk);
+    portuxn(&vm.uxn, 0x5, "audio2", audio_talk);
+    portuxn(&vm.uxn, 0x6, "audio3", audio_talk);
+    devmidi = portuxn(&vm.uxn, 0x7, "midi", nil_talk);
+    devctrl = portuxn(&vm.uxn, 0x8, "controller", nil_talk);
+    devmouse = portuxn(&vm.uxn, 0x9, "mouse", nil_talk);
+    portuxn(&vm.uxn, 0xa, "file", nil_talk);
+    portuxn(&vm.uxn, 0xb, "datetime", datetime_talk);
+    portuxn(&vm.uxn, 0xc, "---", nil_talk);
+    portuxn(&vm.uxn, 0xd, "---", nil_talk);
+    portuxn(&vm.uxn, 0xe, "---", nil_talk);
+    portuxn(&vm.uxn, 0xf, "---", nil_talk);
 
     // Write screen size to dev/screen
     mempoke16(devscreen->dat, 2, WIDTH);
@@ -165,11 +169,11 @@ void EMSCRIPTEN_KEEPALIVE init () {
 }
 
 void EMSCRIPTEN_KEEPALIVE runMain () {
-    evaluxn(&u, PAGE_PROGRAM);
+    evaluxn(&vm.uxn, PAGE_PROGRAM);
 }
 
 void EMSCRIPTEN_KEEPALIVE onUpdate () {
-    evaluxn(&u, mempeek16(devscreen->dat, 0));
+    evaluxn(&vm.uxn, mempeek16(devscreen->dat, 0));
 
     if (reqdraw) {
         reqdraw = 0;
@@ -177,8 +181,8 @@ void EMSCRIPTEN_KEEPALIVE onUpdate () {
         // TODO(2021-06-09): Do alpha compositing in software?
         int ll = WIDTH*HEIGHT;
         Uint32 bg_abgr[ll], fg_abgr[ll];
-        Uint32* bg = ppu.bg.pixels;
-        Uint32* fg = ppu.fg.pixels;
+        Uint32* bg = vm.ppu.bg.pixels;
+        Uint32* fg = vm.ppu.fg.pixels;
 
         for (int ii = 0; ii < ll; ++ii) {
             bg_abgr[ii] = toAbgr(bg[ii]);
@@ -194,12 +198,12 @@ void EMSCRIPTEN_KEEPALIVE onPointerEvent (int x, int y, int buttons) {
     mempoke16(devmouse->dat, 0x4, y);
     devmouse->dat[6] = buttons;
 
-    evaluxn(&u, mempeek16(devmouse->dat, 0));
+    evaluxn(&vm.uxn, mempeek16(devmouse->dat, 0));
 }
 
 void EMSCRIPTEN_KEEPALIVE onWheelEvent (int y) {
     devmouse->dat[7] = y;
-    evaluxn(&u, mempeek16(devmouse->dat, 0));
+    evaluxn(&vm.uxn, mempeek16(devmouse->dat, 0));
     devmouse->dat[7] = 0;
 }
 
@@ -207,6 +211,6 @@ void EMSCRIPTEN_KEEPALIVE onKeyboardEvent (int buttons, int charCode) {
     devctrl->dat[2] = buttons;
     devctrl->dat[3] = charCode;
 
-    evaluxn(&u, mempeek16(devctrl->dat, 0));
+    evaluxn(&vm.uxn, mempeek16(devctrl->dat, 0));
     devctrl->dat[3] = 0;
 }

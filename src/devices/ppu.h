@@ -17,8 +17,11 @@ typedef unsigned char Uint8;
 typedef unsigned short Uint16;
 typedef unsigned int Uint32;
 
+#define WIDTH 384
+#define HEIGHT 256
+
 typedef struct Layer {
-	Uint32 *pixels, colors[4];
+	Uint32 pixels[WIDTH*HEIGHT], colors[4];
 } Layer;
 
 typedef struct Ppu {

@@ -13,6 +13,7 @@ export async function run (wasmBuffer, romBuffer, bgCanvas) {
     // Mutable state
     let lineBuffer = "";
     let keys = 0;
+    let vmState;
 
     const { instance: wasm } = await WebAssembly.instantiate(wasmBuffer, {
         env: {
@@ -108,10 +109,20 @@ export async function run (wasmBuffer, romBuffer, bgCanvas) {
         event.preventDefault();
 
         // Handle special emulator keys
-        switch (event.keyCode) {
-        case 116: // F5
-            boot();
-            return;
+        if (event.type == "keydown") {
+            switch (event.keyCode) {
+            case 113: // F2
+                vmState = saveState();
+                return;
+            case 115: // F4
+                if (vmState != null) {
+                    loadState(vmState);
+                }
+                return;
+            case 116: // F5
+                boot();
+                return;
+            }
         }
 
         let mask = 0;
@@ -223,6 +234,19 @@ export async function run (wasmBuffer, romBuffer, bgCanvas) {
         }
     }
     boot();
+
+    // State saving and loading
+    function saveState () {
+        const memory = new Uint8Array(wasm.exports.memory.buffer);
+        const ptr = wasm.exports.getStatePtr();
+        const size = wasm.exports.getStateSize();
+        return memory.slice(ptr, ptr+size);
+    }
+    function loadState (state) {
+        const memory = new Uint8Array(wasm.exports.memory.buffer);
+        const ptr = wasm.exports.getStatePtr();
+        memory.set(state, ptr);
+    }
 
     // Audio handling
     const audioCtx = new AudioContext();

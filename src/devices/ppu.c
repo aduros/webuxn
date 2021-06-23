@@ -128,14 +128,14 @@ inspect(Ppu *p, Uint8 *stack, Uint8 ptr)
 int
 initppu(Ppu *p, Uint8 hor, Uint8 ver)
 {
-	p->hor = hor;
-	p->ver = ver;
-	p->width = 8 * p->hor;
-	p->height = 8 * p->ver;
-	if(!(p->bg.pixels = malloc(p->width * p->height * sizeof(Uint32))))
-		return 0;
-	if(!(p->fg.pixels = malloc(p->width * p->height * sizeof(Uint32))))
-		return 0;
-	clear(p);
+	/* p->hor = hor; */
+	/* p->ver = ver; */
+	/* p->width = 8 * p->hor; */
+	/* p->height = 8 * p->ver; */
+	/* if(!(p->bg.pixels = malloc(p->width * p->height * sizeof(Uint32)))) */
+	/* 	return 0; */
+	/* if(!(p->fg.pixels = malloc(p->width * p->height * sizeof(Uint32)))) */
+	/* 	return 0; */
+	/* clear(p); */
 	return 1;
 }

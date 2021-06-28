@@ -132,7 +132,7 @@ export async function run (wasmBuffer, romBuffer, bgCanvas) {
                     URL.revokeObjectURL(url);
                 });
                 return;
-            case 121: // F10
+            case 122: // F11
                 if (document.fullscreenElement == null) {
                     bgCanvas.requestFullscreen({navigationUI: "hide"});
                 } else {

@@ -26,3 +26,13 @@ A light-weight port of the [uxn virtual machine](https://100r.co/site/uxn.html) 
 make
 ./rom2html roms/life.rom > life.html
 ```
+
+## rom2url
+
+`rom2url` embeds a rom into a playable URL. The rom is never uploaded to a server, but embedded into
+the URL string itself. This is one way you can share (or pirate?) roms even if you don't have a
+website. If your rom is small enough, it can even fit into a QR code and printed onto paper.
+
+```
+./rom2url roms/animation.rom | qrencode -o qrcode.png
+```

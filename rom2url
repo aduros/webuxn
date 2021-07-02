@@ -1,0 +1,48 @@
+#!/usr/bin/env node
+//
+// Generates a link from a rom file
+
+const fs = require("fs");
+const path = require("path");
+
+if (process.argv.length < 3) {
+    console.error("Usage: rom2url ROM");
+    process.exit(1);
+}
+
+const romBuffer = fs.readFileSync(process.argv[2]);
+
+// Based on https://www.npmjs.com/package/z85
+function encodeZ85 (buffer) {
+    var extra =  buffer.length % 4;
+    if (extra > 0) {
+        buffer = Buffer.concat([buffer, Buffer.alloc(4-extra)]);
+    }
+
+    var encoder = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ.-:+=^!/*?&<>()[]{}@%$#".split("");
+
+    var str = "",
+        byte_nbr = 0,
+        size = buffer.length,
+        value = 0;
+    while (byte_nbr < size) {
+        var characterCode = buffer[byte_nbr++];
+        value = (value * 256) + characterCode;
+        if ((byte_nbr % 4) == 0) {
+            var divisor = 85 * 85 * 85 * 85;
+            while (divisor >= 1) {
+                var idx = Math.floor(value / divisor) % 85;
+                str += encoder[idx];
+                divisor /= 85;
+            }
+            value = 0
+        }
+    }
+
+    // Prevent % escape sequences
+    str = str.replace(/%/g, "%25");
+
+    return str;
+}
+
+console.log("https://aduros.com/webuxn/?raw#" + encodeZ85(romBuffer));
